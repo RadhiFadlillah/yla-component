@@ -1,0 +1,72 @@
+@import "variable";
+.yla-dialog__overlay {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10001;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 32px;
+    .yla-dialog {
+        display: flex;
+        flex-flow: column nowrap;
+        min-width: 400px;
+        min-height: 0;
+        max-height: 100%;
+        overflow: hidden;
+        background-color: #FFF;
+        font-size: 16px;
+        >.yla-dialog__header {
+            display: flex;
+            flex-flow: row nowrap;
+            padding: 16px;
+            min-height: 0;
+            background-color: @darkBg;
+            color: @colorLight;
+            flex-shrink: 0;
+            >p {
+                flex: 1 0;
+                font-weight: 600;
+                font-size: 1em;
+                text-transform: uppercase;
+            }
+            >a:hover {
+                color: @main;
+            }
+        }
+        >.yla-dialog__body {
+            padding: 16px;
+            display: flex;
+            flex-flow: column nowrap;
+            max-height: 100%;
+            min-height: 80px;
+            min-width: 0;
+            font-size: 0.9em;
+            overflow: auto;
+        }
+        >.yla-dialog__footer {
+            padding: 16px;
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: flex-end;
+            border-top: 1px solid @border;
+            >a {
+                text-transform: uppercase;
+                padding: 0 8px;
+                font-size: 0.9em;
+                font-weight: 600;
+                &:hover {
+                    color: @mainDark;
+                }
+            }
+        }
+    }
+}

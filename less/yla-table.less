@@ -1,0 +1,72 @@
+@import "variable";
+.yla-table {
+    max-height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    border: 1px solid @border;
+    font-size: 0.9em;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    >.yla-table__header,
+    >.yla-table__body,
+    >.yla-table__footer {
+        grid-gap: 1px;
+        display: grid;
+        align-items: stretch;
+        grid-template-columns: inherit;
+        >div {
+            padding: 16px;
+        }
+    }
+    >.yla-table__header {
+        color: @colorLight;
+        background-color: @darkBg;
+        font-weight: 600;
+        text-align: center;
+        overflow: hidden;
+        >div a {
+            color: @colorLight;
+            &:hover {
+                color: @main;
+            }
+        }
+    }
+    >.yla-table__body,
+    >.yla-table__footer {
+        background-color: @border;
+        overflow: auto;
+        color: @color;
+        >div {
+            background-color: white;
+            &.strip {
+                background-color: #F6F6F6;
+            }
+            &.center {
+                text-align: center;
+            }
+            &.right {
+                text-align: right;
+            }
+            input {
+                text-align: inherit;
+                font-size: inherit;
+                background-color: transparent;
+                border-bottom: 1px dashed @border;
+            }
+            a {
+                color: @colorLink;
+                &:hover {
+                    color: @mainDark;
+                }
+            }
+        }
+    }
+    >.yla-table__footer {
+        border-top: 1px solid @border;
+        overflow: hidden;
+        >div {
+            font-weight: 600;
+        }
+    }
+}
