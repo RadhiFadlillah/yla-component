@@ -44,13 +44,25 @@
         }
         >.yla-dialog__body {
             padding: 16px;
-            display: flex;
-            flex-flow: column nowrap;
+            display: grid;
             max-height: 100%;
             min-height: 80px;
             min-width: 0;
             font-size: 0.9em;
             overflow: auto;
+            grid-template-columns: max-content 1fr;
+            align-items: baseline;
+            grid-gap: 16px;
+            >.yla-dialog__content {
+                grid-column-start: 1;
+                grid-column-end: 3;
+                align-self: baseline;
+            }
+            >input {
+                color: @color;
+                padding: 8px;
+                border: 1px solid @border;
+            }
         }
         >.yla-dialog__footer {
             padding: 16px;
@@ -66,6 +78,11 @@
                 &:hover {
                     color: @mainDark;
                 }
+            }
+            >i {
+                width: 19px;
+                line-height: 19px;
+                text-align: center;
             }
         }
     }

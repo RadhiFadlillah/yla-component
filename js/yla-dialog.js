@@ -1,21 +1,27 @@
 var YlaDialog = function () {
     // Private variable
     var _template = `
-        <div v-if="dialogVisible" class="yla-dialog__overlay">
+        <div v-if="visible" class="yla-dialog__overlay">
             <div class="yla-dialog">
                 <div class="yla-dialog__header">
                     <p>{{title}}</p>
-                    <a v-if="showClose" @click="handleClose">
-                        <i class="fas fa-fw fa-times"></i>
-                    </a>
                 </div>
                 <div class="yla-dialog__body">
                     <slot name="custom-body">
-                        <p>{{content}}</p>
+                        <p class="yla-dialog__content">{{content}}</p>
+                        <template v-for="field in formFields" class="yla-dialog__field">
+                            <p v-if="showLabel">{{field.label}} :</p>
+                            <input :style="{gridColumnEnd: showLabel ? null : 'span 2'}" 
+                                   :type="fieldType(field)" 
+                                   :placeholder="field.label" 
+                                   v-model="field.value" 
+                                   @keyup.enter="handleMainClick">
+                        </template>
                     </slot>
                 </div>
                 <div class="yla-dialog__footer">
-                    <slot name="custom-footer">
+                    <i v-if="loading" class="fas fa-fw fa-spinner fa-spin"></i>
+                    <slot v-else name="custom-footer">
                         <a v-if="secondText" @click="handleSecondClick" class="yla-dialog__button">{{secondText}}</a>
                         <a @click="handleMainClick" class="yla-dialog__button main">{{mainText}}</a>
                     </slot>
@@ -27,54 +33,83 @@ var YlaDialog = function () {
         template: _template,
         props: {
             visible: Boolean,
+            loading: Boolean,
             title: {
                 type: String,
                 default: ''
-            },
-            showClose: {
-                type: Boolean,
-                default: true
             },
             content: {
                 type: String,
                 default: ''
             },
+            fields: {
+                type: Array,
+                default () {
+                    return []
+                }
+            },
+            showLabel: {
+                type: Boolean,
+                default: false
+            },
             mainText: {
                 type: String,
                 default: 'OK'
             },
-            secondText: String
+            secondText: String,
+            mainClick: {
+                type: Function,
+                default () {}
+            },
+            secondClick: {
+                type: Function,
+                default () {}
+            }
         },
-        data: function () {
+        data() {
             return {
-                dialogVisible: this.visible
+                formFields: []
             };
         },
         watch: {
-            visible: function () {
-                this.dialogVisible = this.visible;
-            }
-        },
-        computed: {
-            hasMainHandler: function () {
-                return this.$listeners && this.$listeners['main-click'];
-            },
-            hasSecondHandler: function () {
-                return this.$listeners && this.$listeners['second-click'];
+            fields: {
+                immediate: true,
+                handler() {
+                    this.formFields = this.fields.map(field => {
+                        if (typeof field === 'string') return {
+                            name: field,
+                            label: field,
+                            value: '',
+                            type: 'text',
+                        }
+
+                        if (typeof field === 'object') return {
+                            name: field.name || '',
+                            label: field.label || '',
+                            value: field.value || '',
+                            type: field.type || 'text',
+                        }
+                    });
+                }
             }
         },
         methods: {
-            handleClose: function () {
-                this.dialogVisible = false;
-                this.$emit('close');
+            fieldType(f) {
+                var type = f.type || 'text';
+                if (type !== 'text' && type !== 'password') return 'text';
+                else return type;
             },
-            handleMainClick: function () {
-                if (this.hasMainHandler) this.$emit('main-click');
-                else this.dialogVisible = false;
+            handleMainClick() {
+                var data = {};
+                this.formFields.forEach(field => {
+                    var value = field.value;
+                    if (field.type === 'number') value = parseInt(value, 10) || 0;
+                    data[field.name] = value;
+                })
+                this.mainClick(data);
             },
-            handleSecondClick: function () {
-                if (this.hasSecondHandler) this.$emit('second-click');
-                else this.dialogVisible = false;
+            handleSecondClick() {
+                this.secondClick();
             }
         }
     };
