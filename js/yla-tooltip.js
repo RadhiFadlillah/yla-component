@@ -87,16 +87,15 @@ var YlaTooltip = function () {
             if (!mainElement) return;
 
             // Set event handler for main element
-            var self = this,
-                newData = mainElement.data || {};
+            var newData = mainElement.data || {};
 
             newData.on = newData.on || {};
-            newData.on.mouseenter = function (evt) {
-                _showTooltip(evt.target, self.tooltip, self.placement);
+            newData.on.mouseenter = (evt) => {
+                _showTooltip(evt.target, this.tooltip, this.placement);
             };
 
-            newData.on.mouseleave = function () {
-                _removeTooltip(self.tooltip);
+            newData.on.mouseleave = () => {
+                _removeTooltip(this.tooltip);
             };
 
             // Return main element

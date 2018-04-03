@@ -1,54 +1,51 @@
 var YlaTable = function () {
-    // Private methods
-    function _getNested(obj /*, ...levels*/ ) {
-        for (var i = 1; i < arguments.length; i++) {
-            obj = obj[arguments[i]];
-            if (!obj) return undefined;
-        }
+    var _template = `
+        <div class="yla-table" :style="{gridTemplateColumns: columnTemplate}">
+            <div class="yla-table__header">
+                <div v-for="col in columns">
+                    <slot :name="'header-'+col.name">{{col.label}}</slot>
+                </div>
+            </div>
+            <div class="yla-table__body">
+                <div v-if="contents.length === 0" style="grid-column: 1/-1; text-align: center">
+                    <slot name="empty-message">There are no data available</slot>
+                </div>
+                <template v-else v-for="(item, idx) in contents">
+                    <div v-for="col in columns" :style="{textAlign: col.align}">
+                        <slot :name="'body-'+col.name" :data="item" :index="idx">{{item[col.name]}}</slot>
+                    </div>
+                </template>
+            </div>
+        </div>`
 
-        return obj;
+    function _createGridColWidth(width, minWidth) {
+        if (width === 'content') return 'minmax(min-content, max-content)';
+
+        var rxSizeUnit = /^\d+(px|em|vw|vh|vm|%)?$/g,
+            widthIsSize = rxSizeUnit.test(width),
+            minWidthIsSize = rxSizeUnit.test(minWidth),
+            min = 'min-content',
+            max = '1fr';
+
+        if (widthIsSize) max = width;
+        if (minWidthIsSize) min = minWidth;
+
+        return 'minmax(' + min + ',' + max + ')';
     }
 
-    function _addDataRowIndex(vnode, idx) {
-        // Set default parameter
-        vnode = vnode || '';
-        idx = idx || 0;
-
-        // Make sure this vnode is element
-        if (!vnode.tag) return;
-
-        // If this vnode has event handler, add data-row attribute
-        var data = vnode.data || {},
-            attrs = data.attrs || {},
-            event = data.on;
-
-        if (event) {
-            attrs['data-row'] = idx;
-            data.attrs = attrs;
-            vnode.data = data;
-        }
-
-        // Do the same for all children of vnode
-        if (vnode.children) vnode.children.forEach(vnode => _addDataRowIndex(vnode, idx));
-    }
-
-    function _tableScrollHandler(e) {
-        var body = e.target || {},
-            header = body.previousElementSibling || {},
-            footer = body.nextElementSibling || {},
-            scrollLeft = body.scrollLeft || 0;
-
-        header.scrollLeft = scrollLeft;
-        footer.scrollLeft = scrollLeft;
-    }
-
-    function _resizeTableColumn(table, tableData, columnsProps) {
+    function _resizeTableColumn(table, columns, contents) {
         // Make sure the table element is exist
         if (!table) return;
 
         // Set default parameter
-        tableData = tableData || [];
-        columnsProps = columnsProps || [];
+        columns = columns || [];
+        contents = contents || [];
+
+        // Check which column that fills width
+        var rxFiller = /\d+fr\s*$/g;
+        isFillerCol = columns.map(col => {
+            return col.width === 'auto' || rxFiller.test(col.width);
+        });
 
         // Fetch sub element of the table
         var header = table.querySelector('.yla-table__header'),
@@ -59,7 +56,7 @@ var YlaTable = function () {
         if (!header || !body) return;
 
         // Clear existing column width
-        var nColumn = columnsProps.length;
+        var nColumn = columns.length;
         for (var i = 0; i < nColumn; i++) {
             var headerCell, bodyCell, footerCell;
 
@@ -73,13 +70,12 @@ var YlaTable = function () {
         }
 
         // Make sure table data is not empty
-        if (tableData.length === 0) return;
+        if (contents.length === 0) return;
 
         // Set new column width
         for (var i = 0; i < nColumn; i++) {
             // If this column fill the table width, don't set the size
-            var columnProps = columnsProps[i] || {};
-            if (columnProps.fillWidth === true) continue;
+            if (isFillerCol[i]) continue;
 
             // Fetch cells
             var headerCell, bodyCell, footerCell, maxWidth;
@@ -99,244 +95,67 @@ var YlaTable = function () {
         }
     }
 
-    function _generateColumnsProps(nodes) {
-        // Set default parameter
-        nodes = nodes || [];
-
-        // Initiate variables
-        var columnsProps = [];
-
-        // Generate header and column properties from each node
-        nodes.forEach(node => {
-            // Make sure it is column
-            if (node.tag !== 'yla-table-column') return;
-
-            // Parse column attributes
-            var attrs = _getNested(node, 'data', 'attrs') || {},
-                prop = attrs.prop || '',
-                align = attrs.align || '',
-                label = attrs.label || '',
-                width = attrs.width || 'auto',
-                minWidth = attrs['min-width'] || '';
-
-            // Check if this column has custom header or body
-            var customElements = node.children || [],
-                customHeader, customBody;
-
-            customElements.forEach(elem => {
-                var slot = _getNested(elem, 'data', 'slot');
-                if (slot === 'custom-header') customHeader = elem;
-                else if (slot === 'custom-body') customBody = elem;
-            });
-
-            if (customHeader) {
-                if (customHeader.tag === 'template') customHeader = customHeader.children || [];
-                if (customHeader.constructor !== Array) customHeader = [customHeader];
-                label = customHeader;
-            }
-
-            if (customBody) {
-                if (customBody.tag === 'template') customBody = customBody.children || [];
-                if (customBody.constructor !== Array) customBody = [customBody];
-            }
-
-            // Generate grid template column width
-            var gridTemplate;
-            if (width === 'content') gridTemplate = 'minmax(min-content, max-content)';
-            else {
-                var rxSizeUnit = /^\d+(px|em|vw|vh|vm|%)?$/g,
-                    widthIsSize = rxSizeUnit.test(width),
-                    minWidthIsSize = rxSizeUnit.test(minWidth),
-                    min = 'min-content',
-                    max = '1fr';
-
-                if (widthIsSize) max = width;
-                if (minWidthIsSize) min = minWidth;
-
-                gridTemplate = 'minmax(' + min + ',' + max + ')';
-            }
-
-            // Save column properties
-            columnsProps.push({
-                prop: prop,
-                align: align,
-                header: label,
-                fillWidth: width === 'auto',
-                gridTemplate: gridTemplate,
-                customBody: customBody,
-            });
-        });
-
-        return columnsProps;
-    }
-
-    function _generateHeader(columnsProps, fnCreateElement) {
-        // Set default parameter
-        columnsProps = columnsProps || [];
-        fnCreateElement = fnCreateElement || function () {};
-
-        // Generate header cells
-        var headerCells = columnsProps.map(column => fnCreateElement('div', column.header || []));
-
-        // Generate header
-        return fnCreateElement('div', {
-            class: 'yla-table__header'
-        }, headerCells);
-    }
-
-    function _generateBody(tableData, columnsProps, fnCreateElement, emptyMessage) {
-        // Set default parameter
-        tableData = tableData || [];
-        columnsProps = columnsProps || [];
-        fnCreateElement = fnCreateElement || function () {};
-        emptyMessage = emptyMessage || 'There are no data available';
-
-        // Generate body cells
-        var bodyCells = [];
-        tableData.forEach((item, idx) => {
-            columnsProps.forEach(column => {
-                var dataProp = column.prop || '',
-                    textAlignment = column.align || '',
-                    cellContent = item[dataProp] || '',
-                    classes = [];
-
-                // Make sure cell content is array
-                cellContent = [cellContent];
-
-                // Set cell text alignment
-                if (textAlignment === 'center') classes.push('center');
-                else if (textAlignment === 'right') classes.push('right');
-
-                // Check if it uses custom cell content
-                if (column.customBody) {
-                    cellContent = column.customBody;
-                    cellContent.forEach(elem => _addDataRowIndex(elem, idx));
-                }
-
-                // Create body cell
-                bodyCells.push(fnCreateElement('div', {
-                    class: classes.join(' '),
-                }, cellContent));
-            });
-        });
-
-        // If the table data is empty, write empty message
-        if (tableData.length === 0) {
-            // Make sure empty message is Array
-            if (emptyMessage.constructor !== Array) emptyMessage = [emptyMessage];
-
-            // Create empty message cell
-            bodyCells.push(fnCreateElement('div', {
-                class: 'center',
-                style: {
-                    gridColumn: '1/-1'
-                }
-            }, emptyMessage));
-        }
-
-        // Generate body
-        return fnCreateElement('div', {
-            class: 'yla-table__body',
-            on: {
-                scroll: _tableScrollHandler
-            }
-        }, bodyCells);
-    }
-
-    function _generateFooter(summaryData, columnsProps, fnCreateElement) {
-        // Set default parameter
-        summaryData = summaryData || {};
-        columnsProps = columnsProps || [];
-        fnCreateElement = fnCreateElement || function () {};
-
-        // Generate footer cells
-        var footerCells = columnsProps.map(column => {
-            var dataProp = column.prop || '',
-                textAlignment = column.align || '',
-                cellContent = summaryData[dataProp] || '',
-                className;
-
-            // Set cell text alignment
-            if (textAlignment === 'center') className = 'center';
-            else if (textAlignment === 'right') className = 'right';
-
-            return fnCreateElement('div', {
-                class: className
-            }, cellContent);
-        });
-
-        // Generate footer
-        return fnCreateElement('div', {
-            class: 'yla-table__footer'
-        }, footerCells);
-    }
-
     // Create Vue component
     return {
+        template: _template,
         props: {
-            data: {
+            columns: {
                 type: Array,
-                default: function () {
-                    return [];
-                },
+                required: true
             },
-            summary: Object
+            contents: {
+                type: Array,
+                required: true
+            },
+            summary: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            }
         },
-        data: function () {
-            return {
-                columnsProps: []
-            };
+        computed: {
+            columnTemplate() {
+                return this.columns
+                    .map(col => _createGridColWidth(col.width, col.minWidth))
+                    .join(' ');
+            },
+            finalColumns() {
+                return this.columns.map((col, idx) => {
+                    var columnWidth = _createGridColWidth(col.width, col.minWidth),
+                        textAlignment = col.align;
+
+                    if (textAlignment !== 'center' && textAlignment !== 'right') {
+                        textAlignment = undefined;
+                    }
+
+                    return {
+                        name: col.name || 'col-' + idx,
+                        label: col.label || '',
+                        sortable: col.sortable || false,
+                        clickable: col.clickable || false,
+                        width: columnWidth,
+                        align: textAlignment
+                    }
+                });
+            }
         },
         watch: {
-            columnsProps: function () {
-                _resizeTableColumn(this.$el, this.data, this.columnsProps);
+            contents: {
+                immediate: true,
+                handler() {
+                    this.$nextTick(() => {
+                        _resizeTableColumn(this.$el, this.columns, this.contents)
+                    });
+                }
             }
         },
         mounted: function () {
             this.$nextTick(() => {
                 window.addEventListener('resize', () => {
-                    _resizeTableColumn(this.$el, this.data, this.columnsProps);
+                    _resizeTableColumn(this.$el, this.columns, this.contents);
                 });
             });
-        },
-        render: function (createElement) {
-            // Read component props
-            var tableData = this.data,
-                tableSummary = this.summary;
-
-            // Generate column props from elements in slot
-            var columnsProps = _generateColumnsProps(this.$slots.default);
-            this.columnsProps = columnsProps;
-
-            // Make sure there are existing columns
-            if (columnsProps.length === 0) return;
-
-            // Generate header and body
-            var header = _generateHeader(columnsProps, createElement),
-                body = _generateBody(tableData, columnsProps, createElement, this.$slots.empty),
-                tableContents = [header, body];
-
-            // Generate footer if needed
-            if (tableData.length > 0 && tableSummary) {
-                var footer = _generateFooter(tableSummary, columnsProps, createElement);
-                tableContents.push(footer);
-            }
-
-            // Create final table
-            var templateColumns = [];
-            columnsProps.forEach(column => {
-                templateColumns.push(column.gridTemplate || '');
-            });
-
-            return createElement(
-                'div', {
-                    class: 'yla-table',
-                    attrs: this.$attrs,
-                    style: {
-                        gridTemplateColumns: templateColumns.join(' ')
-                    }
-                }, tableContents
-            );
         }
     }
 };

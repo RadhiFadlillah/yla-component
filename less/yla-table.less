@@ -25,12 +25,16 @@
         font-weight: 600;
         text-align: center;
         overflow: hidden;
+        flex-shrink: 0;
         >div a {
             color: @colorLight;
             &:hover {
                 color: @main;
             }
         }
+    }
+    >.yla-table__footer {
+        flex-shrink: 0;
     }
     >.yla-table__body,
     >.yla-table__footer {
