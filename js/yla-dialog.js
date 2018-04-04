@@ -109,6 +109,12 @@ var YlaDialog = function () {
                         }
                     });
                 }
+            },
+            'fields.length' () {
+                this.focus();
+            },
+            visible() {
+                this.focus();
             }
         },
         methods: {
@@ -129,18 +135,18 @@ var YlaDialog = function () {
             },
             handleSecondClick() {
                 this.secondClick();
+            },
+            focus() {
+                this.$nextTick(() => {
+                    if (!this.visible) return;
+
+                    var fields = this.$refs.input,
+                        button = this.$refs.mainButton;
+
+                    if (fields && fields.length > 0) this.$refs.input[0].focus();
+                    else if (button) button.focus();
+                });
             }
-        },
-        updated() {
-            this.$nextTick(() => {
-                if (!this.visible) return;
-
-                var fields = this.$refs.input,
-                    button = this.$refs.mainButton;
-
-                if (fields && fields.length > 0) this.$refs.input[0].focus();
-                else if (button) button.focus();
-            });
         }
     };
 };

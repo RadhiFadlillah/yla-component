@@ -7,21 +7,29 @@ var YlaTable = function () {
                 </div>
             </div>
             <div class="yla-table__body">
-                <div v-if="contents.length === 0" style="grid-column: 1/-1; text-align: center">
+                <div v-if="loading" style="grid-column: 1/-1; text-align: center">
+                    <i class="fas fa-fw fa-spinner fa-spin"></i>
+                </div>
+                <div v-else-if="contents.length === 0" style="grid-column: 1/-1; text-align: center">
                     <slot name="empty-message">There are no data available</slot>
                 </div>
                 <template v-else v-for="(item, idx) in contents">
-                    <div v-for="col in columns" :style="{textAlign: col.align}">
+                    <div v-for="col in columns" :style="{textAlign: col.align}" :class="{strip: (idx % 2 === 1)}">
                         <slot :name="'body-'+col.name" :data="item" :index="idx">{{item[col.name]}}</slot>
                     </div>
                 </template>
+            </div>
+            <div v-if="summary && contents.length > 0" class="yla-table__footer">
+                <div v-for="col in columns" :style="{textAlign: col.align}">
+                    {{summary[col.name]}}
+                </div>
             </div>
         </div>`
 
     function _createGridColWidth(width, minWidth) {
         if (width === 'content') return 'minmax(min-content, max-content)';
 
-        var rxSizeUnit = /^\d+(px|em|vw|vh|vm|%)?$/g,
+        var rxSizeUnit = /^\d+(px|em|vw|vh|vm|%|fr)?$/g,
             widthIsSize = rxSizeUnit.test(width),
             minWidthIsSize = rxSizeUnit.test(minWidth),
             min = 'min-content',
@@ -99,6 +107,7 @@ var YlaTable = function () {
     return {
         template: _template,
         props: {
+            loading: Boolean,
             columns: {
                 type: Array,
                 required: true
@@ -107,12 +116,7 @@ var YlaTable = function () {
                 type: Array,
                 required: true
             },
-            summary: {
-                type: Object,
-                default () {
-                    return {}
-                }
-            }
+            summary: Object
         },
         computed: {
             columnTemplate() {
@@ -142,6 +146,14 @@ var YlaTable = function () {
         },
         watch: {
             contents: {
+                immediate: true,
+                handler() {
+                    this.$nextTick(() => {
+                        _resizeTableColumn(this.$el, this.columns, this.contents)
+                    });
+                }
+            },
+            summary: {
                 immediate: true,
                 handler() {
                     this.$nextTick(() => {

@@ -44,7 +44,7 @@
         >div {
             background-color: white;
             &.strip {
-                background-color: #F6F6F6;
+                background-color: @stripColor;
             }
             &.center {
                 text-align: center;
@@ -59,7 +59,10 @@
                 border-bottom: 1px dashed @border;
             }
             a {
-                color: @colorLink;
+                color: @color;
+                &.menu {
+                    color: @colorLink;
+                }
                 &:hover {
                     color: @mainDark;
                 }

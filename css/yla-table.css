@@ -31,12 +31,16 @@
   font-weight: 600;
   text-align: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .yla-table > .yla-table__header > div a {
   color: #EEE;
 }
 .yla-table > .yla-table__header > div a:hover {
   color: #FF9800;
+}
+.yla-table > .yla-table__footer {
+  flex-shrink: 0;
 }
 .yla-table > .yla-table__body,
 .yla-table > .yla-table__footer {
@@ -69,6 +73,10 @@
 }
 .yla-table > .yla-table__body > div a,
 .yla-table > .yla-table__footer > div a {
+  color: #232323;
+}
+.yla-table > .yla-table__body > div a.menu,
+.yla-table > .yla-table__footer > div a.menu {
   color: #999;
 }
 .yla-table > .yla-table__body > div a:hover,
