@@ -7,9 +7,9 @@ var YlaDialog = function () {
                     <p>{{title}}</p>
                 </div>
                 <div class="yla-dialog__body">
-                    <slot name="custom-body">
+                    <slot>
                         <p class="yla-dialog__content">{{content}}</p>
-                        <template v-for="(field,index) in formFields" class="yla-dialog__field">
+                        <template v-for="(field,index) in formFields">
                             <p v-if="showLabel">{{field.label}} :</p>
                             <input :style="{gridColumnEnd: showLabel ? null : 'span 2'}" 
                                    :type="fieldType(field)" 
@@ -18,7 +18,9 @@ var YlaDialog = function () {
                                    ref="input"
                                    v-model="field.value" 
                                    @focus="$event.target.select()"
-                                   @keyup.enter="handleMainClick">
+                                   @keyup="handleInput(index)"
+                                   @keyup.enter="handleInputEnter(index)">
+                            <span ref="suggestion" v-if="field.suggestion" class="suggestion">{{field.suggestion}}</span>
                         </template>
                     </slot>
                 </div>
@@ -99,6 +101,8 @@ var YlaDialog = function () {
                             label: field,
                             value: '',
                             type: 'text',
+                            dictionary: [],
+                            suggestion: undefined
                         }
 
                         if (typeof field === 'object') return {
@@ -106,6 +110,8 @@ var YlaDialog = function () {
                             label: field.label || '',
                             value: field.value || '',
                             type: field.type || 'text',
+                            dictionary: field.dictionary instanceof Array ? field.dictionary : [],
+                            suggestion: undefined
                         }
                     });
                 }
@@ -136,15 +142,72 @@ var YlaDialog = function () {
             handleSecondClick() {
                 this.secondClick();
             },
+            handleInput(index) {
+                // Create initial variable
+                var field = this.formFields[index],
+                    dictionary = field.dictionary;
+
+                // Make sure dictionary is not empty
+                if (dictionary.length === 0) return;
+
+                // Fetch suggestion from dictionary
+                var words = field.value.split(' '),
+                    lastWord = words[words.length - 1].toLowerCase(),
+                    suggestion;
+
+                if (lastWord !== '') {
+                    suggestion = dictionary.find(word => {
+                        return word.toLowerCase().startsWith(lastWord)
+                    });
+                }
+
+                this.formFields[index].suggestion = suggestion;
+
+                // Make sure suggestion exist
+                if (suggestion == null) return;
+
+                // Display suggestion
+                this.$nextTick(() => {
+                    var input = this.$refs.input[index],
+                        span = this.$refs.suggestion[index],
+                        inputRect = input.getBoundingClientRect();
+
+                    span.style.top = (inputRect.bottom - 1) + 'px';
+                    span.style.left = inputRect.left + 'px';
+                });
+            },
+            handleInputEnter(index) {
+                var suggestion = this.formFields[index].suggestion;
+
+                if (suggestion == null) {
+                    this.handleMainClick();
+                    return;
+                }
+
+                var words = this.formFields[index].value.split(' ');
+                words.pop();
+                words.push(suggestion);
+
+                this.formFields[index].value = words.join(' ') + ' ';
+                this.formFields[index].suggestion = undefined;
+            },
             focus() {
                 this.$nextTick(() => {
                     if (!this.visible) return;
 
                     var fields = this.$refs.input,
+                        otherInput = this.$el.querySelectorAll('input'),
                         button = this.$refs.mainButton;
 
-                    if (fields && fields.length > 0) this.$refs.input[0].focus();
-                    else if (button) button.focus();
+                    if (fields && fields.length > 0) {
+                        this.$refs.input[0].focus();
+                        this.$refs.input[0].select();
+                    } else if (otherInput && otherInput.length > 0) {
+                        otherInput[0].focus();
+                        otherInput[0].select();
+                    } else if (button) {
+                        button.focus();
+                    }
                 });
             }
         }
