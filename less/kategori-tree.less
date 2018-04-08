@@ -1,0 +1,56 @@
+@import "variable";
+.kategori-tree {
+    a {
+        color: @color;
+        padding: 8px 0;
+        display: block;
+        &:hover,
+        &:focus {
+            color: @mainDark;
+        }
+        &.has-child {
+            font-weight: 600;
+            &::after {
+                content: '+';
+                margin-left: 8px;
+            }
+            &.expanded::after {
+                content: '-';
+            }
+            &:hover,
+            &:focus {
+                &::after {
+                    color: @mainDark;
+                }
+            }
+        }
+    }
+    >.kategori-tree {
+        position: relative;
+        padding-left: 24px;
+        &::before {
+            content: ' ';
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 50%;
+            width: 10px;
+            border: 2px solid @border;
+            border-top-color: transparent;
+            border-right-color: transparent;
+            margin-bottom: -2px;
+        }
+        &:not(:last-child)::after {
+            content: ' ';
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            bottom: -4px;
+            width: 2px;
+            margin-top: -4px;
+            background-color: @border;
+        }
+    }
+}
