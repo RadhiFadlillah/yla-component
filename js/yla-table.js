@@ -3,7 +3,7 @@ var YlaTable = function () {
         <div class="yla-table">
             <div class="yla-table__header" 
                  :style="{gridTemplateColumns: headerColumnTemplate}">
-                <div v-for="(col, idx) in columns" 
+                <div v-for="(col, idx) in finalColumns" 
                      :class="colClass(col)" 
                      :style="{width: colWidth(idx)}"
                      @click="sort(col)">
@@ -19,12 +19,12 @@ var YlaTable = function () {
                     <slot name="empty-message">There are no data available</slot>
                 </div>
                 <template v-else>
-                    <div v-for="col in columns" class="hidden">{{col.label+' XXX'}}</div>
+                    <div v-for="col in finalColumns" class="hidden">{{col.label}}{{col.sortable ? 'XXX' : ''}}</div>
                     <template v-if="summary && contents.length > 0 && !loading">
-                        <div v-for="col in columns" class="hidden">{{summary[col.name]}}</div>
+                        <div v-for="col in finalColumns" class="hidden">{{summary[col.name]}}</div>
                     </template>
                     <template v-for="(item, idx) in contents">
-                        <div v-for="col in columns" :style="{textAlign: col.align}" :class="{strip: (idx % 2 === 1)}">
+                        <div v-for="col in finalColumns" :style="{textAlign: col.align}" :class="{strip: (idx % 2 === 1)}">
                             <slot :name="'body-'+col.name" :data="item" :index="idx">{{item[col.name]}}</slot>
                         </div>
                     </template>
@@ -33,7 +33,7 @@ var YlaTable = function () {
             <div class="yla-table__footer" 
                  v-if="summary && contents.length > 0 && !loading" 
                  :style="{gridTemplateColumns: headerColumnTemplate}">
-                <div v-for="(col, idx) in columns" 
+                <div v-for="(col, idx) in finalColumns" 
                      :style="{textAlign: col.align, width: colWidth(idx)}">
                     {{summary[col.name]}}
                 </div>
