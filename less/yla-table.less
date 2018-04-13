@@ -8,72 +8,106 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    >.yla-table__header,
-    >.yla-table__body,
-    >.yla-table__footer {
-        grid-gap: 1px;
-        display: grid;
-        align-items: stretch;
-        grid-template-columns: inherit;
-        >div {
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        th,
+        td {
             padding: 16px;
+        }
+        th {
+            font-weight: 600;
+            &.scroll-bar {
+                padding: 0;
+            }
         }
     }
     >.yla-table__header {
-        color: @colorLight;
-        background-color: @darkBg;
-        font-weight: 600;
-        text-align: center;
         overflow: hidden;
         flex-shrink: 0;
-        >div a {
+        th {
+            border: 1px solid @color;
+            background-color: @darkBg;
+            font-weight: 600;
             color: @colorLight;
-            &:hover {
-                color: @main;
+            &.sortable {
+                cursor: pointer;
+                &:hover {
+                    color: @main;
+                }
             }
-        }
-    }
-    >.yla-table__footer {
-        flex-shrink: 0;
-    }
-    >.yla-table__body,
-    >.yla-table__footer {
-        background-color: @border;
-        overflow: auto;
-        color: @color;
-        >div {
-            background-color: white;
-            &.strip {
-                background-color: @stripColor;
-            }
-            &.center {
-                text-align: center;
-            }
-            &.right {
-                text-align: right;
-            }
-            input {
-                text-align: inherit;
-                font-size: inherit;
-                background-color: transparent;
-                border-bottom: 1px dashed @border;
+            &.sorted {
+                &::after {
+                    margin-left: 8px;
+                    content: '\25BE';
+                }
+                &.desc::after {
+                    content: '\25B4';
+                }
             }
             a {
-                color: @color;
-                &.menu {
-                    color: @colorLink;
-                }
+                color: @colorLight;
                 &:hover {
-                    color: @mainDark;
+                    color: @main;
+                }
+            }
+        }
+    }
+    >.yla-table__body {
+        overflow: auto;
+        position: relative;
+        margin: 0 -1px;
+        >div {
+            padding: 16px;
+            text-align: center;
+            background-color: @contentBg;
+        }
+        table {
+            thead,
+            tfoot {
+                visibility: collapse;
+                th {
+                    padding-top: 0;
+                    padding-bottom: 0;
+                    line-height: 0;
+                    overflow: hidden;
+                }
+            }
+            tbody>tr {
+                background-color: @contentBg;
+                &:nth-child(2n) {
+                    background-color: @stripColor;
+                }
+                >td {
+                    border: 1px solid @border;
+                    white-space: nowrap;
+                    input {
+                        text-align: inherit;
+                        font-size: inherit;
+                        background-color: transparent;
+                        border-bottom: 1px dashed @border;
+                    }
+                    a {
+                        color: @color;
+                        &.menu {
+                            color: @colorLink;
+                        }
+                        &:hover {
+                            color: @mainDark;
+                        }
+                    }
                 }
             }
         }
     }
     >.yla-table__footer {
-        border-top: 1px solid @border;
         overflow: hidden;
-        >div {
+        flex-shrink: 0;
+        th {
+            border: 1px solid @color;
+            background-color: @darkBg;
             font-weight: 600;
+            color: @main;
         }
     }
 }
