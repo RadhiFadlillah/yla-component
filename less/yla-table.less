@@ -8,28 +8,27 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        th,
-        td {
+    >.yla-table__header,
+    >.yla-table__body,
+    >.yla-table__footer {
+        grid-gap: 1px;
+        display: grid;
+        align-items: stretch;
+        grid-template-columns: inherit;
+        >div {
             padding: 16px;
-        }
-        th {
-            font-weight: 600;
-            &.scroll-bar {
-                padding: 0;
-            }
         }
     }
     >.yla-table__header {
+        color: @colorLight;
+        background-color: @color;
+        font-weight: 600;
+        text-align: center;
         overflow: hidden;
         flex-shrink: 0;
-        th {
-            border: 1px solid @color;
+        >div {
+            padding: 16px 8px;
             background-color: @darkBg;
-            font-weight: 600;
-            color: @colorLight;
             &.sortable {
                 cursor: pointer;
                 &:hover {
@@ -54,60 +53,48 @@
         }
     }
     >.yla-table__body {
+        background-color: @border;
         overflow: auto;
-        position: relative;
-        margin: 0 -1px;
+        color: @color;
         >div {
-            padding: 16px;
-            text-align: center;
-            background-color: @contentBg;
-        }
-        table {
-            thead,
-            tfoot {
-                visibility: collapse;
-                th {
-                    padding-top: 0;
-                    padding-bottom: 0;
-                    line-height: 0;
-                    overflow: hidden;
-                }
+            background-color: white;
+            &.strip {
+                background-color: @stripColor;
             }
-            tbody>tr {
-                background-color: @contentBg;
-                &:nth-child(2n) {
-                    background-color: @stripColor;
+            &.hidden {
+                font-weight: 600;
+                visibility: collapse;
+                padding-top: 0;
+                padding-bottom: 0;
+                line-height: 0;
+                overflow: hidden;
+                border: 0;
+            }
+            input {
+                text-align: inherit;
+                font-size: inherit;
+                background-color: transparent;
+                border-bottom: 1px dashed @border;
+            }
+            a {
+                color: @color;
+                &.menu {
+                    color: @colorLink;
                 }
-                >td {
-                    border: 1px solid @border;
-                    white-space: nowrap;
-                    input {
-                        text-align: inherit;
-                        font-size: inherit;
-                        background-color: transparent;
-                        border-bottom: 1px dashed @border;
-                    }
-                    a {
-                        color: @color;
-                        &.menu {
-                            color: @colorLink;
-                        }
-                        &:hover {
-                            color: @mainDark;
-                        }
-                    }
+                &:hover {
+                    color: @mainDark;
                 }
             }
         }
     }
     >.yla-table__footer {
+        background-color: @color;
         overflow: hidden;
+        color: @main;
         flex-shrink: 0;
-        th {
-            border: 1px solid @color;
+        >div {
             background-color: @darkBg;
             font-weight: 600;
-            color: @main;
         }
     }
 }

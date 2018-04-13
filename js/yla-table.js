@@ -1,58 +1,63 @@
 var YlaTable = function () {
     var _template = `
         <div class="yla-table">
-            <div class="yla-table__header">
-                <table :style="{tableLayout: tableLayout}">
-                    <thead>
-                        <th v-for="(col, idx) in columns" 
-                            @click="sort(col)"
-                            :class="colClass(col)" 
-                            :style="{width: colWidth(idx)}">
-                            <slot :name="'header-'+col.name">{{col.label}}</slot>
-                        </th>
-                        <th class="scroll-bar" :style="{width: scrollWidth+'px'}"></th>
-                    </thead>
-                </table>
+            <div class="yla-table__header" 
+                 :style="{gridTemplateColumns: headerColumnTemplate}">
+                <div v-for="(col, idx) in columns" 
+                     :class="colClass(col)" 
+                     :style="{width: colWidth(idx)}"
+                     @click="sort(col)">
+                    <slot :name="'header-'+col.name">{{col.label}}</slot>
+                </div>
+                <div></div>
             </div>
-            <div class="yla-table__body">
-                <div v-if="loading">
+            <div class="yla-table__body" :style="{gridTemplateColumns: columnTemplate}">
+                <div v-if="loading" style="grid-column: 1/-1; text-align: center">
                     <i class="fas fa-fw fa-spinner fa-spin"></i>
                 </div>
                 <div v-else-if="contents.length === 0" style="grid-column: 1/-1; text-align: center">
                     <slot name="empty-message">There are no data available</slot>
                 </div>
-                <table v-else>
-                    <thead>
-                        <th v-for="(col, idx) in columns">
-                            <slot :name="'header-'+col.name">{{col.label}}</slot>
-                        </th>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(item, idx) in contents">
-                            <td v-for="col in columns" :style="{textAlign: col.align}">
-                                <slot :name="'body-'+col.name" :data="item" :index="idx">{{item[col.name]}}</slot>
-                            </td>
-                        </tr>
-                    </tbody>
-                    <tfoot v-if="summary">
-                        <th v-for="(col, idx) in columns">{{summary[col.name]}}</th>
-                    </tfoot>
-                </table>
+                <template v-else>
+                    <div v-for="col in columns" class="hidden">{{col.label}}</div>
+                    <template v-if="summary && contents.length > 0 && !loading">
+                        <div v-for="col in columns" class="hidden">{{summary[col.name]}}</div>
+                    </template>
+                    <template v-for="(item, idx) in contents">
+                        <div v-for="col in columns" :style="{textAlign: col.align}" :class="{strip: (idx % 2 === 1)}">
+                            <slot :name="'body-'+col.name" :data="item" :index="idx">{{item[col.name]}}</slot>
+                        </div>
+                    </template>
+                </template>
             </div>
-            <div class="yla-table__footer" v-if="summary && contents.length > 0 && !loading">
-                <table :style="{tableLayout: tableLayout}">
-                    <tfoot>
-                        <th v-for="(col, idx) in columns" 
-                            :style="{textAlign: col.align, width: colWidth(idx)}">
-                            {{summary[col.name]}}
-                        </th>
-                        <th class="scroll-bar" :style="{width: scrollWidth+'px'}"></th>                        
-                    </tfoot>
-                </table>
+            <div class="yla-table__footer" 
+                 v-if="summary && contents.length > 0 && !loading" 
+                 :style="{gridTemplateColumns: headerColumnTemplate}">
+                <div v-for="(col, idx) in columns" 
+                     :style="{textAlign: col.align, width: colWidth(idx)}">
+                    {{summary[col.name]}}
+                </div>
+                <div></div>
             </div>
         </div>`
 
     // Private function
+    function _createColumnTemplate(width, minWidth) {
+        if (width === 'content') return 'minmax(min-content, max-content)';
+        if (width === 'max-content') return 'max-content';
+
+        var rxSizeUnit = /^\d+(px|em|vw|vh|vm|%|fr)?$/g,
+            widthIsSize = rxSizeUnit.test(width),
+            minWidthIsSize = rxSizeUnit.test(minWidth),
+            min = 'min-content',
+            max = '1fr';
+
+        if (widthIsSize) max = width;
+        if (minWidthIsSize) min = minWidth;
+
+        return 'minmax(' + min + ',' + max + ')';
+    }
+
     function _getScrollWidth(table) {
         if (!table) return 0;
 
@@ -60,24 +65,25 @@ var YlaTable = function () {
         return body.offsetWidth - body.clientWidth;
     }
 
-    function _getColumnWidth(table) {
+    function _getColumnWidth(table, columns, contents) {
         // Make sure the table element is exist
         if (!table) return [];
 
-        // Get elements
-        var body = table.querySelector('.yla-table__body'),
-            rows = body.querySelectorAll('tr');
+        // If there are no columns, stop
+        if (columns.constructor !== Array) return [];
 
-        // If there are no rows, stop
-        if (rows.length === 0) return [];
+        // If there are contents, stop
+        if (contents.constructor !== Array || contents.length === 0) return [];
 
         // Get width of each column
         var result = [],
-            columns = rows[0].querySelectorAll('td');
+            nColumn = columns.length,
+            body = table.querySelector('.yla-table__body');
 
-        columns.forEach(col => {
-            result.push(col.getBoundingClientRect().width);
-        });
+        for (var i = 0; i < nColumn; i++) {
+            var cell = body.children[i];
+            if (cell) result.push(cell.offsetWidth);
+        }
 
         return result;
     }
@@ -99,13 +105,25 @@ var YlaTable = function () {
         },
         data() {
             return {
-                columnWidth: [],
                 scrollWidth: 0,
+                columnsWidth: [],
                 sortColumn: '',
                 sortDirection: ''
             }
         },
         computed: {
+            columnTemplate() {
+                return this.columns
+                    .map(col => _createColumnTemplate(col.width, col.minWidth))
+                    .join(' ');
+            },
+            headerColumnTemplate() {
+                var templates = this.columns
+                    .map(col => _createColumnTemplate(col.width, col.minWidth));
+
+                templates.push(this.scrollWidth + 'px');
+                return templates.join(' ');
+            },
             finalColumns() {
                 return this.columns.map((col, idx) => {
                     var columnWidth = _createGridColWidth(col.width, col.minWidth),
@@ -115,22 +133,15 @@ var YlaTable = function () {
                         textAlignment = undefined;
                     }
 
-                    var name = col.name || 'col-' + idx,
-                        sortName = col.sortName || name;
-
                     return {
-                        name: name,
+                        name: col.name || 'col-' + idx,
                         label: col.label || '',
                         sortable: col.sortable || false,
-                        sortName: sortName,
+                        clickable: col.clickable || false,
                         width: columnWidth,
                         align: textAlignment
                     }
                 });
-            },
-            tableLayout() {
-                if (this.contents.length > 0) return 'fixed';
-                return 'auto';
             }
         },
         watch: {
@@ -139,7 +150,7 @@ var YlaTable = function () {
                 handler() {
                     this.$nextTick(() => {
                         this.scrollWidth = _getScrollWidth(this.$el);
-                        this.columnWidth = _getColumnWidth(this.$el);
+                        this.columnsWidth = _getColumnWidth(this.$el, this.columns, this.contents);
                     });
                 }
             },
@@ -147,14 +158,14 @@ var YlaTable = function () {
                 immediate: true,
                 handler() {
                     this.$nextTick(() => {
-                        this.columnWidth = _getColumnWidth(this.$el);
+                        this.columnsWidth = _getColumnWidth(this.$el, this.columns, this.contents);
                     });
                 }
             }
         },
         methods: {
             colWidth(index) {
-                var width = this.columnWidth[index];
+                var width = this.columnsWidth[index];
                 if (width != null) width += 'px';
                 return width;
             },
@@ -190,25 +201,21 @@ var YlaTable = function () {
         mounted() {
             this.$nextTick(() => {
                 var header = this.$el.querySelector('.yla-table__header'),
-                    body = this.$el.querySelector('.yla-table__body'),
-                    footer = this.$el.querySelector('.yla-table__footer');
+                    body = this.$el.querySelector('.yla-table__body');
 
                 body.addEventListener('scroll', (e) => {
-                    if (footer == null) footer = this.$el.querySelector('.yla-table__footer');
+                    var footer = this.$el.querySelector('.yla-table__footer');
+
                     header.scrollLeft = body.scrollLeft;
-                    footer.scrollLeft = body.scrollLeft;
+                    if (footer) footer.scrollLeft = body.scrollLeft;
                 });
 
                 window.addEventListener('resize', () => {
                     body.scrollTop = 0;
                     body.scrollLeft = 0;
-                    this.columnWidth = _getColumnWidth(this.$el);
+                    this.scrollWidth = _getScrollWidth(this.$el);
+                    this.columnsWidth = _getColumnWidth(this.$el, this.columns, this.contents);
                 });
-            });
-        },
-        activated() {
-            this.$nextTick(() => {
-                this.columnWidth = _getColumnWidth(this.$el);
             });
         }
     }
