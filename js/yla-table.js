@@ -88,6 +88,22 @@ var YlaTable = function () {
         return result;
     }
 
+    function _resetScroll(table) {
+        // Make sure the table element is exist
+        if (!table) return;
+
+        // Get elements
+        var header = table.querySelector('.yla-table__header'),
+            body = table.querySelector('.yla-table__body'),
+            footer = table.querySelector('.yla-table__footer');
+
+        // Reset scroll position
+        body.scrollTop = 0;
+        body.scrollLeft = 0;
+        header.scrollLeft = 0;
+        if (footer) footer.scrollLeft = 0;
+    }
+
     // Create Vue component
     return {
         template: _template,
@@ -126,8 +142,7 @@ var YlaTable = function () {
             },
             finalColumns() {
                 return this.columns.map((col, idx) => {
-                    var columnWidth = _createGridColWidth(col.width, col.minWidth),
-                        textAlignment = col.align;
+                    var textAlignment = col.align;
 
                     if (textAlignment !== 'center' && textAlignment !== 'right') {
                         textAlignment = undefined;
@@ -136,9 +151,9 @@ var YlaTable = function () {
                     return {
                         name: col.name || 'col-' + idx,
                         label: col.label || '',
-                        sortable: col.sortable || false,
-                        clickable: col.clickable || false,
-                        width: columnWidth,
+                        sortable: col.sortable === true,
+                        width: col.width,
+                        minWidth: col.minWidth,
                         align: textAlignment
                     }
                 });
@@ -151,6 +166,7 @@ var YlaTable = function () {
                     this.$nextTick(() => {
                         this.scrollWidth = _getScrollWidth(this.$el);
                         this.columnsWidth = _getColumnWidth(this.$el, this.columns, this.contents);
+                        _resetScroll(this.$el);
                     });
                 }
             },
@@ -211,10 +227,9 @@ var YlaTable = function () {
                 });
 
                 window.addEventListener('resize', () => {
-                    body.scrollTop = 0;
-                    body.scrollLeft = 0;
                     this.scrollWidth = _getScrollWidth(this.$el);
                     this.columnsWidth = _getColumnWidth(this.$el, this.columns, this.contents);
+                    _resetScroll(this.$el);
                 });
             });
         }
