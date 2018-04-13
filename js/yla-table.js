@@ -19,7 +19,7 @@ var YlaTable = function () {
                     <slot name="empty-message">There are no data available</slot>
                 </div>
                 <template v-else>
-                    <div v-for="col in columns" class="hidden">{{col.label}}</div>
+                    <div v-for="col in columns" class="hidden">{{col.label+' XXX'}}</div>
                     <template v-if="summary && contents.length > 0 && !loading">
                         <div v-for="col in columns" class="hidden">{{summary[col.name]}}</div>
                     </template>
